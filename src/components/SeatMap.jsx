@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Chair } from 'lucide-react';
+import { Armchair } from 'lucide-react';
 
 const SeatMap = ({ selectedSeats = [], onSeatSelect }) => {
     const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -42,7 +42,7 @@ const SeatMap = ({ selectedSeats = [], onSeatSelect }) => {
                                     disabled={status === 'booked'}
                                     className={`relative group ${status === 'booked' ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-110 transition-transform'}`}
                                 >
-                                    <Chair
+                                    <Armchair
                                         size={28}
                                         className={
                                             status === 'selected'
@@ -64,15 +64,15 @@ const SeatMap = ({ selectedSeats = [], onSeatSelect }) => {
 
             <div className="mt-8 flex justify-center space-x-6">
                 <div className="flex items-center space-x-2">
-                    <Chair size={20} className="text-gray-400" />
+                    <Armchair size={20} className="text-gray-400" />
                     <span className="text-gray-400">Available</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Chair size={20} className="text-purple-500 fill-current" />
+                    <Armchair size={20} className="text-purple-500 fill-current" />
                     <span className="text-gray-400">Selected</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Chair size={20} className="text-gray-600 fill-current" />
+                    <Armchair size={20} className="text-gray-600 fill-current" />
                     <span className="text-gray-400">Booked</span>
                 </div>
             </div>

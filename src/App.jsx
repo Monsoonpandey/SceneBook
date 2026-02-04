@@ -14,8 +14,15 @@ import Admin from './pages/Admin';
 import MovieDashboard from './pages/MovieDashboard';
 import Users from './pages/Users';
 import './App.css';
+import { useEffect } from 'react';
+import { seedFirestore } from './seed/seedData';
+import Book from './pages/Book';
+import Confirmation from './pages/Confirmation';
 
 function App() {
+  useEffect(() => {
+    seedFirestore();
+  }, []);
   return (
     <AuthProvider>
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-900 to-black text-white">
@@ -27,42 +34,14 @@ function App() {
             <Route path="/movie/:id" element={<MovieDetails />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/book" element={<Book />} />
+            <Route path="/confirmation" element={<Confirmation />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin/movies" element={<MovieDashboard />} />
+            <Route path="/admin/users" element={<Users />} />
 
-            <Route
-              path="/my-bookings"
-              element={
-                <ProtectedRoute>
-                  <MyBookings />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <Admin />
-                </AdminRoute>
-              }
-            />
-
-            <Route
-              path="/admin/movies"
-              element={
-                <AdminRoute>
-                  <MovieDashboard />
-                </AdminRoute>
-              }
-            />
-
-            <Route
-              path="/admin/users"
-              element={
-                <AdminRoute>
-                  <Users />
-                </AdminRoute>
-              }
-            />
+  
           </Routes>
         </main>
         <Footer />
