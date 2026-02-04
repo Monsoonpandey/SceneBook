@@ -3,13 +3,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDFLgBF-lZjCMDSvPUN8zPSsTp6_03wIgo",
-    authDomain: "movie-booking-137b3.firebaseapp.com",
-    projectId: "movie-booking-137b3",
-    storageBucket: "movie-booking-137b3.firebasestorage.app",
-    messagingSenderId: "244582926742",
-    appId: "1:244582926742:web:d472f9aadf8dcc5310f5b7",
-    measurementId: "G-B6SRCMVQJ7"
+    apiKey: import.meta.env.FIREBASE_API_kEY,
+    authDomain: import.meta.env.FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.FIREBASE_APP_ID,
+    measurementId: import.meta.env.FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
