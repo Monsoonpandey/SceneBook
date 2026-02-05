@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Star, MapPin, Play, ChevronLeft, ChevronRight, Ticket, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/Firebase';
 
 const MovieDetails = () => {
@@ -20,26 +20,37 @@ const MovieDetails = () => {
   const [trailerKey, setTrailerKey] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Fetch movie details
+  // Fetch movie details FROM FIREBASE
   useEffect(() => {
     const fetchMovieDetails = async () => {
       try {
         setLoading(true);
 
-        // 1. Fetch movie details from TMDB
-        const movieResponse = await fetch(
-          `https://api.themoviedb.org/3/movie/${id}?api_key=80d491707d8cf7b38aa19c7ccab0952f&append_to_response=videos`
-        );
-        const movieData = await movieResponse.json();
-        setMovie(movieData);
+        // 1. Fetch movie from Firebase
+        const movieRef = doc(db, 'movies', id);
+        const movieDoc = await getDoc(movieRef);
 
-        // 2. Find YouTube trailer
-        const trailer = movieData.videos?.results?.find(
-          video => video.type === 'Trailer' && video.site === 'YouTube'
-        );
-        setTrailerKey(trailer?.key);
+        if (movieDoc.exists()) {
+          const movieData = { id: movieDoc.id, ...movieDoc.data() };
+          setMovie(movieData);
+          console.log("✅ Movie from Firebase:", movieData);
 
-        // 3. Fetch theatres and showtimes FROM FIREBASE
+          // For trailers, you can add a trailer_key field to your movie data
+          // Or use a hardcoded trailer for now
+          if (movieData.title === "Inception") {
+            setTrailerKey("YoHD9XEInc0"); // Inception trailer
+          } else if (movieData.title === "The Dark Knight") {
+            setTrailerKey("EXeTwQWrcwY"); // Dark Knight trailer
+          } else if (movieData.title === "Interstellar") {
+            setTrailerKey("zSWdZVtXT7E"); // Interstellar trailer
+          } else if (movieData.title === "Avengers: Endgame") {
+            setTrailerKey("TcMBFSGVi1c"); // Avengers trailer
+          }
+        } else {
+          console.error('Movie not found in Firebase');
+        }
+
+        // 2. Fetch theatres and showtimes from Firebase
         await fetchTheatresAndShowtimes();
 
       } catch (error) {
@@ -52,18 +63,15 @@ const MovieDetails = () => {
     fetchMovieDetails();
   }, [id]);
 
-  // REAL FIREBASE FETCH FUNCTION
+  // Fetch theatres and showtimes
   const fetchTheatresAndShowtimes = async () => {
     try {
-      console.log(`Fetching data for movie ID: ${id}`);
-
-      // 1. Fetch theatres from Firebase 'theatres' collection
+      // Fetch theatres from Firebase
       const theatresRef = collection(db, 'theatres');
       const theatresSnapshot = await getDocs(theatresRef);
 
       if (theatresSnapshot.empty) {
-        console.warn("⚠️ No theatres found in Firebase! Check seedData.js");
-        // Fallback data
+        console.warn("⚠️ No theatres found in Firebase!");
         const fallbackTheatres = [
           { id: 'theatre_1', name: 'Grand Cinema', location: 'Downtown', amenities: ["Dolby Atmos", "Recliner Seats"] },
           { id: 'theatre_2', name: 'City Plex', location: 'Mall Road', amenities: ["3D Projection", "VIP Lounge"] },
@@ -79,21 +87,20 @@ const MovieDetails = () => {
         setTheatres(theatresData);
       }
 
-      // 2. Fetch showtimes for THIS movie from Firebase
+      // Fetch showtimes for THIS movie from Firebase
       const showtimesRef = collection(db, 'showtimes');
-      const q = query(showtimesRef, where('movieId', '==', id.toString()));
+      const q = query(showtimesRef, where('movieId', '==', id));
       const showtimesSnapshot = await getDocs(q);
 
       if (showtimesSnapshot.empty) {
         console.warn(`⚠️ No showtimes in Firebase for movie: ${id}`);
-        console.log("💡 Make sure seedData.js has showtimes with movieId:", id);
-        // Fallback showtimes
-        const fallbackShowtimes = [
+        // Add mock showtimes for testing
+        const mockShowtimes = [
           { id: 'show_1', movieId: id, theatreId: 'theatre_1', time: '10:30 AM', date: '2024-01-20', format: '2D' },
           { id: 'show_2', movieId: id, theatreId: 'theatre_1', time: '02:00 PM', date: '2024-01-20', format: '3D' },
           { id: 'show_3', movieId: id, theatreId: 'theatre_2', time: '06:30 PM', date: '2024-01-20', format: '2D' },
         ];
-        setAllShowtimes(fallbackShowtimes);
+        setAllShowtimes(mockShowtimes);
       } else {
         const showtimesData = showtimesSnapshot.docs.map(doc => ({
           id: doc.id,
@@ -105,20 +112,6 @@ const MovieDetails = () => {
 
     } catch (error) {
       console.error('❌ Firebase error:', error);
-      // Fallback data
-      const fallbackTheatres = [
-        { id: 'theatre_1', name: 'Grand Cinema', location: 'Downtown', amenities: ["Dolby Atmos", "Recliner Seats"] },
-        { id: 'theatre_2', name: 'City Plex', location: 'Mall Road', amenities: ["3D Projection", "VIP Lounge"] },
-        { id: 'theatre_3', name: 'IMAX Arena', location: 'Tech Park', amenities: ["IMAX", "4K Laser"] },
-      ];
-      setTheatres(fallbackTheatres);
-
-      const fallbackShowtimes = [
-        { id: 'show_1', movieId: id, theatreId: 'theatre_1', time: '10:30 AM', date: '2024-01-20', format: '2D' },
-        { id: 'show_2', movieId: id, theatreId: 'theatre_1', time: '02:00 PM', date: '2024-01-20', format: '3D' },
-        { id: 'show_3', movieId: id, theatreId: 'theatre_2', time: '06:30 PM', date: '2024-01-20', format: '2D' },
-      ];
-      setAllShowtimes(fallbackShowtimes);
     }
   };
 
@@ -155,7 +148,7 @@ const MovieDetails = () => {
           id: movie.id,
           title: movie.title,
           poster_path: movie.poster_path,
-          runtime: movie.runtime
+          duration: movie.duration
         },
         theatre: selectedTheatre,
         showtime: selectedShowtime,
@@ -235,33 +228,33 @@ const MovieDetails = () => {
                 <div className="flex items-center space-x-1 bg-gray-900/50 px-3 py-1 rounded-full">
                   <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                   <span className="text-white font-semibold">
-                    {movie.vote_average?.toFixed(1)}/10
+                    {movie.rating?.toFixed(1) || 'N/A'}/10
                   </span>
                 </div>
                 <div className="flex items-center space-x-1 text-gray-400">
                   <Calendar className="w-4 h-4" />
-                  <span>{new Date(movie.release_date).getFullYear()}</span>
+                  <span>{movie.release_date || 'Coming Soon'}</span>
                 </div>
                 <div className="flex items-center space-x-1 text-gray-400">
                   <Clock className="w-4 h-4" />
-                  <span>{movie.runtime || 'N/A'} min</span>
+                  <span>{movie.duration ? `${movie.duration} min` : 'N/A'}</span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-6">
-                {movie.genres?.map(genre => (
+                {movie.genre?.map((genre, index) => (
                   <span
-                    key={genre.id}
+                    key={index}
                     className="px-3 py-1 bg-purple-900/30 text-purple-300 text-sm rounded-full border border-purple-700/50"
                   >
-                    {genre.name}
+                    {genre}
                   </span>
                 ))}
               </div>
 
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-white">Overview</h3>
-                <p className="text-gray-300 leading-relaxed">{movie.overview}</p>
+                <p className="text-gray-300 leading-relaxed">{movie.synopsis || movie.overview || 'No description available.'}</p>
               </div>
             </div>
           </div>

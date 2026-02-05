@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import MovieCard from '../components/MovieCard';
 import { Filter, Search, Loader } from 'lucide-react';
-
-const API_KEY = '80d491707d8cf7b38aa19c7ccab0952f';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../config/Firebase';
 
 const Movies = () => {
   const [movies, setMovies] = useState([]);
@@ -17,20 +17,26 @@ const Movies = () => {
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      let url;
+      const moviesRef = collection(db, 'movies');
 
+      const snapshot = await getDocs(moviesRef);
+      const moviesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Filter by genre if selected
+      let filtered = moviesData;
       if (selectedGenre) {
-        url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=${selectedGenre}&sort_by=popularity.desc`;
-      } else {
-        url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&sort_by=popularity.desc`;
+        filtered = moviesData.filter(movie =>
+          movie.genre && movie.genre.includes(selectedGenre)
+        );
       }
 
-      const response = await fetch(url);
-      const data = await response.json();
-      setMovies(data.results || []);
+      setMovies(filtered);
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching movies:', error);
+      console.error('Error fetching movies from Firebase:', error);
       setLoading(false);
     }
   };
@@ -69,14 +75,16 @@ const Movies = () => {
                 className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500"
               >
                 <option value="">All Genres</option>
-                <option value="28">Action</option>
-                <option value="12">Adventure</option>
-                <option value="35">Comedy</option>
-                <option value="18">Drama</option>
-                <option value="27">Horror</option>
-                <option value="10749">Romance</option>
-                <option value="878">Science Fiction</option>
-                <option value="53">Thriller</option>
+                <option value="Action">Action</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Drama">Drama</option>
+                <option value="Horror">Horror</option>
+                <option value="Romance">Romance</option>
+                <option value="Sci-Fi">Sci-Fi</option>
+                <option value="Thriller">Thriller</option>
+                <option value="Crime">Crime</option>
+                <option value="History">History</option>
               </select>
             </div>
           </div>

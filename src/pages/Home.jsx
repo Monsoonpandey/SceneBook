@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, MapPin, Calendar, Clock, Star } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../config/Firebase';
 
 const Home = () => {
     const [carouselIndex, setCarouselIndex] = useState(0);
@@ -29,14 +31,26 @@ const Home = () => {
     const fetchPopularMovies = useCallback(async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                'https://api.themoviedb.org/3/discover/movie?api_key=80d491707d8cf7b38aa19c7ccab0952f&sort_by=popularity.desc&page=1'
-            );
-            const data = await response.json();
-            // Limit to 8 movies as requested
-            setPopularMovies(data.results.slice(0, 8));
+            // Fetch from Firebase instead of TMDB API
+            const moviesRef = collection(db, 'movies');
+            const q = query(moviesRef, where('status', '==', 'now_showing'));
+
+            const snapshot = await getDocs(q);
+            const moviesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Sort by rating and limit to 8
+            const popularMovies = moviesData
+                .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+                .slice(0, 8);
+
+            setPopularMovies(popularMovies);
         } catch (error) {
-            console.error('Error fetching movies:', error);
+            console.error('Error fetching movies from Firebase:', error);
+            // Fallback to empty array
+            setPopularMovies([]);
         } finally {
             setLoading(false);
         }
@@ -129,8 +143,8 @@ const Home = () => {
                             key={index}
                             onClick={() => setCarouselIndex(index)}
                             className={`w-3 h-3 rounded-full transition-all duration-300 ${index === carouselIndex
-                                    ? 'bg-purple-500 w-8'
-                                    : 'bg-gray-600 hover:bg-gray-500'
+                                ? 'bg-purple-500 w-8'
+                                : 'bg-gray-600 hover:bg-gray-500'
                                 }`}
                         />
                     ))}
@@ -205,6 +219,16 @@ const Home = () => {
                                     <div className="bg-gray-800 rounded-xl h-80"></div>
                                 </div>
                             ))}
+                        </div>
+                    ) : popularMovies.length === 0 ? (
+                        <div className="text-center py-12">
+                            <p className="text-gray-400 text-lg">No movies found. Make sure Firebase has movies with "now_showing" status.</p>
+                            <button
+                                onClick={fetchPopularMovies}
+                                className="mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg"
+                            >
+                                Try Again
+                            </button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

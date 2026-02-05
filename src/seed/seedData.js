@@ -9,10 +9,33 @@ import {
 
 import { db } from "../config/Firebase";
 
-// EMPTY - We use TMDB API for movies
-const MOVIES = [];
+/* ---------------- MOVIES ---------------- */
 
-// Theatres
+const MOVIES = [
+    {
+        id: "movie_1",
+        title: "Inception",
+        genre: ["Sci-Fi", "Thriller"],
+        rating: 8.8,
+        synopsis: "A thief who enters dream worlds...",
+        duration: 148,
+        status: "now_showing",
+        poster_path: "/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg"
+    },
+    {
+        id: "movie_2",
+        title: "The Dark Knight",
+        genre: ["Action", "Drama"],
+        rating: 9.0,
+        synopsis: "Batman raises the stakes...",
+        duration: 152,
+        status: "now_showing",
+        poster_path: "/qJ2tW6WMUDux911r6m7haRef0WH.jpg"
+    },
+];
+
+/* ---------------- THEATRES ---------------- */
+
 const THEATRES = [
     {
         id: "theatre_1",
@@ -34,32 +57,22 @@ const THEATRES = [
     }
 ];
 
-// Showtimes for TMDB movie IDs
+/* ---------------- SHOWTIMES ---------------- */
+
 const SHOWTIMES = [
-    // For movie ID: 1168190 (The Wrecking Crew)
-    { id: "show_1", movieId: "1168190", theatreId: "theatre_1", time: "10:30 AM", date: "2024-01-20", format: "2D" },
-    { id: "show_2", movieId: "1168190", theatreId: "theatre_1", time: "02:00 PM", date: "2024-01-20", format: "3D" },
-    { id: "show_3", movieId: "1168190", theatreId: "theatre_2", time: "06:30 PM", date: "2024-01-20", format: "2D" },
+    { id: "show_1", movieId: "movie_1", theatreId: "theatre_1", time: "10:30 AM", date: "2024-01-20", format: "2D" },
+    { id: "show_2", movieId: "movie_1", theatreId: "theatre_1", time: "02:00 PM", date: "2024-01-20", format: "3D" },
+    { id: "show_3", movieId: "movie_1", theatreId: "theatre_2", time: "06:30 PM", date: "2024-01-20", format: "2D" },
+    { id: "show_4", movieId: "movie_1", theatreId: "theatre_3", time: "09:00 PM", date: "2024-01-20", format: "IMAX" },
 
-    // For movie ID: 840464 (Greenland 2: Migration)
-    { id: "show_4", movieId: "840464", theatreId: "theatre_1", time: "11:00 AM", date: "2024-01-20", format: "IMAX" },
-    { id: "show_5", movieId: "840464", theatreId: "theatre_3", time: "08:00 PM", date: "2024-01-20", format: "3D" },
-
-    // For movie ID: 1084242 (Zootopia 2)
-    { id: "show_6", movieId: "1084242", theatreId: "theatre_2", time: "10:00 AM", date: "2024-01-20", format: "2D" },
-    { id: "show_7", movieId: "1084242", theatreId: "theatre_3", time: "04:30 PM", date: "2024-01-20", format: "3D" },
-
-    // For movie ID: 1419406 (The Shadow's Edge)
-    { id: "show_8", movieId: "1419406", theatreId: "theatre_1", time: "12:00 PM", date: "2024-01-20", format: "2D" },
-
-    // For movie ID: 1234731 (Anaconda)
-    { id: "show_9", movieId: "1234731", theatreId: "theatre_2", time: "09:00 PM", date: "2024-01-20", format: "3D" },
-
-    // For movie ID: 1271895 (96 Minutes)
-    { id: "show_10", movieId: "1271895", theatreId: "theatre_3", time: "07:00 PM", date: "2024-01-20", format: "2D" }
+    { id: "show_5", movieId: "movie_2", theatreId: "theatre_1", time: "11:00 AM", date: "2024-01-20", format: "IMAX" },
+    { id: "show_6", movieId: "movie_2", theatreId: "theatre_2", time: "03:00 PM", date: "2024-01-20", format: "2D" },
+    { id: "show_7", movieId: "movie_2", theatreId: "theatre_3", time: "08:00 PM", date: "2024-01-20", format: "3D" },
+    { id: "show_8", movieId: "movie_2", theatreId: "theatre_3", time: "11:30 PM", date: "2024-01-20", format: "2D" },
 ];
 
-// Generate Seats
+/* ---------------- SEAT GENERATOR ---------------- */
+
 function generateSeats(showTimeID) {
     const seats = [];
     const rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
@@ -68,7 +81,7 @@ function generateSeats(showTimeID) {
         for (let col = 1; col <= 10; col++) {
             seats.push({
                 id: `${showTimeID}_${row}${col}`,
-                showTimeID: showTimeID,
+                showTimeID,
                 seatId: `${row}${col}`,
                 status: "available",
                 lockedBy: null,
@@ -78,43 +91,33 @@ function generateSeats(showTimeID) {
             });
         }
     });
-    return seats
+
+    return seats;
 }
 
-// seed data store
+/* ---------------- SEED FUNCTION ---------------- */
+
 export async function seedFirestore() {
     console.log("🎬 Starting Firebase seeding process...");
 
-    // Check if theatres already exist (to avoid re-seeding)
     const theatresRef = collection(db, "theatres");
     const existingTheatres = await getDocs(theatresRef);
 
-    if (existingTheatres.size === 0) {
-        console.log("🎪 Seeding theatres...");
-        for (const theatre of THEATRES) {
-            await setDoc(doc(db, "theatres", theatre.id), theatre);
-        }
-        console.log("✅ Theatres seeded successfully");
-    } else {
-        console.log("✅ Theatres already seeded, skipping...");
+    if (existingTheatres.size > 0) {
+        console.log("✅ Data already seeded, skipping...");
+        return;
     }
 
-
-    // Seed theatres
     console.log("🎪 Seeding theatres...");
     for (const theatre of THEATRES) {
         await setDoc(doc(db, "theatres", theatre.id), theatre);
     }
-    console.log("✅ Theatres seeded successfully");
 
-    // Seed showtimes
     console.log("🕒 Seeding showtimes...");
     for (const show of SHOWTIMES) {
         await setDoc(doc(db, "showtimes", show.id), show);
     }
-    console.log("✅ Showtimes seeded successfully");
 
-    // Seed seats for each showtime
     console.log("💺 Seeding seats...");
     for (const show of SHOWTIMES) {
         const seats = generateSeats(show.id);
@@ -122,7 +125,6 @@ export async function seedFirestore() {
             await setDoc(doc(db, "seats", seat.id), seat);
         }
     }
-    console.log("✅ Seats seeded successfully");
 
-    console.log("🎉 Firebase seeding completed successfully!");
+    console.log("🎉 Firebase seeding completed!");
 }
