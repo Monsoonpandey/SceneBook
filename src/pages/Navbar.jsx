@@ -81,7 +81,7 @@ const Navbar = () => {
                 <span>Movies</span>
               </Link>
               <Link
-                to="/movies?category=now-playing"
+                to="/movies/category"
                 className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors duration-300 hover:scale-105"
               >
                 <Grid3x3 className="w-5 h-5" />

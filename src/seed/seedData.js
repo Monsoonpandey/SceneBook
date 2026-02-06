@@ -34,6 +34,12 @@ const MOVIES = [
     },
 ];
 
+console.log("🎥 Seeding movies...");
+for (const movie of MOVIES) {
+    await setDoc(doc(db, "movies", movie.id), movie);
+}
+
+
 /* ---------------- THEATRES ---------------- */
 
 const THEATRES = [

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, LogIn, AlertCircle, Facebook } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Chrome } from 'lucide-react';
+
+
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -137,8 +139,10 @@ const Login = () => {
                         disabled={loading}
                         className="w-full py-3 px-4 bg-gray-800/50 border border-gray-700 hover:bg-gray-700/50 text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center space-x-3"
                     >
-                        <Facebook className="w-5 h-5" />
+                        <Chrome className="w-5 h-5" />
                         <span>Continue with Google</span>
+
+
                     </button>
 
                     <div className="text-center">

@@ -18,6 +18,7 @@ import { useEffect } from 'react';
 import { seedFirestore } from './seed/seedData';
 import Book from './pages/Book';
 import Confirmation from './pages/Confirmation';
+import Category from './pages/Category';
 
 function App() {
   useEffect(() => {
@@ -40,8 +41,9 @@ function App() {
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/movies" element={<MovieDashboard />} />
             <Route path="/admin/users" element={<Users />} />
+            <Route path="/movies/category" element={<Category />} />
 
-  
+
           </Routes>
         </main>
         <Footer />

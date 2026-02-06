@@ -1,115 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import MovieCard from '../components/MovieCard';
-import { Filter, Search, Loader } from 'lucide-react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../config/Firebase';
+import React, { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../config/Firebase";
+import MovieCard from "../components/MovieCard";
+import { Loader, Filter, X } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 const Movies = () => {
   const [movies, setMovies] = useState([]);
+  const [filteredMovies, setFilteredMovies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const category = searchParams.get('category');
 
   useEffect(() => {
     fetchMovies();
-  }, [selectedGenre]);
+  }, []);
+
+  useEffect(() => {
+    if (movies.length > 0 && category) {
+      const filtered = movies.filter(movie =>
+        movie.genre?.includes(category)
+      );
+      setFilteredMovies(filtered);
+    } else {
+      setFilteredMovies(movies);
+    }
+  }, [category, movies]);
 
   const fetchMovies = async () => {
     try {
-      setLoading(true);
-      const moviesRef = collection(db, 'movies');
-
-      const snapshot = await getDocs(moviesRef);
-      const moviesData = snapshot.docs.map(doc => ({
+      const snapshot = await getDocs(collection(db, "movies"));
+      const data = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-
-      // Filter by genre if selected
-      let filtered = moviesData;
-      if (selectedGenre) {
-        filtered = moviesData.filter(movie =>
-          movie.genre && movie.genre.includes(selectedGenre)
-        );
-      }
-
-      setMovies(filtered);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching movies from Firebase:', error);
+      setMovies(data);
+      setFilteredMovies(data);
+    } catch (err) {
+      console.error("Error fetching movies:", err);
+    } finally {
       setLoading(false);
     }
   };
 
-  const filteredMovies = movies.filter(movie =>
-    movie.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const clearFilter = () => {
+    setSearchParams({});
+  };
+
+  const goToCategories = () => {
+    navigate('/categories');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader className="animate-spin h-12 w-12 text-purple-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8">
       <div className="container mx-auto px-4">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Browse Movies</h1>
-          <p className="text-gray-400 text-lg">Discover and book your favorite movies</p>
-        </div>
-
-        {/* Search and Filter */}
-        <div className="mb-8 bg-gray-800/50 rounded-xl p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Search movies..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500"
-              />
+        {/* Header with Filter Indicator */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <h1 className="text-4xl font-bold">
+                {category ? `${category} Movies` : "All Movies"}
+              </h1>
+              <p className="text-gray-400 mt-2">
+                {category
+                  ? `Showing ${filteredMovies.length} movie${filteredMovies.length !== 1 ? 's' : ''} in ${category}`
+                  : `Browse our collection of ${movies.length} movies`
+                }
+              </p>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Filter size={20} className="text-gray-400" />
-              <select
-                value={selectedGenre}
-                onChange={(e) => setSelectedGenre(e.target.value)}
-                className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500"
+            <div className="flex gap-3">
+              {category && (
+                <button
+                  onClick={clearFilter}
+                  className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
+                >
+                  <X size={18} />
+                  Clear Filter
+                </button>
+              )}
+              <button
+                onClick={goToCategories}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition flex items-center gap-2"
               >
-                <option value="">All Genres</option>
-                <option value="Action">Action</option>
-                <option value="Adventure">Adventure</option>
-                <option value="Comedy">Comedy</option>
-                <option value="Drama">Drama</option>
-                <option value="Horror">Horror</option>
-                <option value="Romance">Romance</option>
-                <option value="Sci-Fi">Sci-Fi</option>
-                <option value="Thriller">Thriller</option>
-                <option value="Crime">Crime</option>
-                <option value="History">History</option>
-              </select>
+                <Filter size={18} />
+                Browse Categories
+              </button>
             </div>
           </div>
+
+          {/* Active Filter Badge */}
+          {category && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full mb-6">
+              <span className="text-sm">Active Filter:</span>
+              <span className="font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                {category}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Movies Grid */}
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader className="animate-spin h-12 w-12 text-purple-500" />
+        {filteredMovies.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredMovies.map(movie => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {filteredMovies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
+          <div className="text-center py-16 bg-gray-800/30 rounded-2xl">
+            <div className="inline-block p-4 bg-gray-800 rounded-full mb-4">
+              <Filter size={48} className="text-gray-400" />
             </div>
-
-            {filteredMovies.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-400 text-lg">No movies found. Try a different search.</p>
-              </div>
+            <h3 className="text-2xl font-semibold mb-2">
+              No Movies Found
+            </h3>
+            <p className="text-gray-400 mb-6">
+              {category
+                ? `No movies found in "${category}" category`
+                : "No movies available in the database"
+              }
+            </p>
+            {category ? (
+              <button
+                onClick={clearFilter}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold hover:from-purple-700 hover:to-pink-700 transition"
+              >
+                View All Movies
+              </button>
+            ) : (
+              <button
+                onClick={goToCategories}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full font-semibold hover:from-purple-700 hover:to-pink-700 transition"
+              >
+                Browse Categories
+              </button>
             )}
-          </>
+          </div>
         )}
+
+        {/* Back to Categories Link */}
+        <div className="mt-12 pt-8 border-t border-gray-800 text-center">
+          <button
+            onClick={goToCategories}
+            className="text-purple-400 hover:text-purple-300 transition flex items-center justify-center gap-2 mx-auto"
+          >
+            <Filter size={18} />
+            Explore more categories
+          </button>
+        </div>
       </div>
     </div>
   );
